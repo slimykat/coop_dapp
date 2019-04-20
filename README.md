@@ -1,6 +1,6 @@
 #README.md
 
-## Team members: (slimykat)[https://github.com/slimykat]
+## Team members: [slimykat](https://github.com/slimykat), [pewapplepie](https://github.com/pewapplepie)
 
 project goal: 
 - provide a plate form for dapp rookies
