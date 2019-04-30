@@ -17,23 +17,25 @@ contract Ballot {
     }
     
     address chairperson;
-    Mission[] mission;
-    bool[] mission_status;  /// f: waiting t: processing
+    Mission[5] mission;
+    bool[5] mission_status;  /// f: waiting t: processing
     
     
     mapping(address => Account) account;
     uint public num_of_missions;
     
     /// initiation, set a limited list of missions
-    constructor(uint8 _numMissions) public {
-        require(_numMissions > 1);
+    constructor() public {
+        ///uint _numMissions = 5;
+       /// require(_numMissions > 1);
         chairperson = msg.sender;
-        mission.length = _numMissions;
-        mission_status.length = _numMissions;
+        num_of_missions = 0;   
+       /// mission.length = _numMissions;
+       /// mission_status.length = _numMissions;
     }
 
     function build_account(address payable from) public{
-        require(msg.sender == chairperson);
+        require(msg.sender == chairperson, "not manager");
         account[from].has_issue = 0;
         account[from].in_mission = 0;
         account[from].addr = from;
@@ -41,11 +43,12 @@ contract Ballot {
 
     /// assign a mission
     function Issue(uint sets, uint coins) public returns(uint){
-        require(num_of_missions < mission.length, "not enough queue space");
+        
+        require(num_of_missions <= 5, "not enough queue space");
         require(account[msg.sender].has_issue < 10, "too many issues");
         
         uint mission_num = 0;
-        for (uint i = 0; i < mission.length; i++){
+        for (uint i = 0; i < 5; i++){
             if(mission_status[i] == false){
                 mission_status[i] = true;
                 mission_num = i;
@@ -54,6 +57,8 @@ contract Ballot {
                 mission[i] = new_mission;
                 num_of_missions ++;
                 account[msg.sender].has_issue++;
+                
+                return(mission_num);
             }
         }
         return(mission_num);
@@ -63,14 +68,14 @@ contract Ballot {
     
     function Assign(uint mission_num)public{
         require(mission_status[mission_num] == true);
-        require(mission[mission_num].coop != mission[mission_num].host);
+        require(mission[mission_num].coop == mission[mission_num].host);
         require(account[msg.sender].in_mission < 10);
         
         mission[mission_num].coop = msg.sender;
       ///  emit
     }
     function Getinfo(uint mission_num)public view returns(uint coin, bool status, uint descript, address whose, address towho){
-        if(mission_num < num_of_missions){
+        if(mission_num > num_of_missions){
             status = false;
             descript = 0;
         }
