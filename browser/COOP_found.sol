@@ -1,79 +1,75 @@
 pragma solidity >=0.4.22 <0.6.0;
 
-contract Ballot {
+contract coop_found {
 
     struct Mission {
         uint coins;
-        /// bool pendding;
         address payable host;
         address payable coop;
-        uint description; ///bitmap of mission catagory
+        uint description; /// bitmap of mission catagory
+        bool status;
     }
-    
     struct Account{
-        address payable addr;
         uint has_issue;
         uint in_mission;
+        bool exist;
     }
     
     address chairperson;
-    Mission[5] mission;
-    bool[5] mission_status;  /// f: waiting t: processing
-    
-    
+    mapping(uint => Mission) mission;
     mapping(address => Account) account;
-    uint public num_of_missions;
     
+    uint num_of_missions;
+    uint max_of_missions;
     /// initiation, set a limited list of missions
     constructor() public {
-        ///uint _numMissions = 5;
-       /// require(_numMissions > 1);
         chairperson = msg.sender;
-        num_of_missions = 0;   
-       /// mission.length = _numMissions;
-       /// mission_status.length = _numMissions;
+        num_of_missions = 0;
+        max_of_missions = 0;
     }
 
-    function build_account(address payable from) public{
-        require(msg.sender == chairperson, "not manager");
-        account[from].has_issue = 0;
-        account[from].in_mission = 0;
-        account[from].addr = from;
+    function set_queue(uint _max_of_missions)public{
+        require(msg.sender == chairperson, "not enough authority");
+        max_of_missions = _max_of_missions;
     }
 
-    /// assign a mission
-    function Issue(uint sets, uint coins) public returns(uint){
-        
-        require(num_of_missions <= 5, "not enough queue space");
+    function build_account() public{
+        require(account[msg.sender].exist == false, "account already exist");
+        account[msg.sender].has_issue = 0;
+        account[msg.sender].in_mission = 0;
+        account[msg.sender].exist = true;
+    }
+
+    /// give an issue, find coops
+    function Issue(uint descript, uint coins) public returns(uint){
+        require(num_of_missions < max_of_missions, "not enough queue space");
         require(account[msg.sender].has_issue < 10, "too many issues");
         
-        uint mission_num = 0;
-        for (uint i = 0; i < 5; i++){
-            if(mission_status[i] == false){
-                mission_status[i] = true;
-                mission_num = i;
-                
-                Mission memory new_mission = Mission(coins, msg.sender, msg.sender, sets);
-                mission[i] = new_mission;
-                num_of_missions ++;
-                account[msg.sender].has_issue++;
-                
-                return(mission_num);
-            }
+        uint mission_num = descript % max_of_missions;
+        
+        while(mission[mission_num].status == true){
+            mission_num = (mission_num + 1) % max_of_missions;
         }
+        
+        Mission memory new_mission = Mission(coins, msg.sender, msg.sender, descript, true);
+        mission[mission_num] = new_mission;
+        num_of_missions ++;
+        account[msg.sender].has_issue++;
+
+        num_of_missions++;
         return(mission_num);
     }
-
-   /// event();
     
+    /// find a mission, become a coop
     function Assign(uint mission_num)public{
-        require(mission_status[mission_num] == true);
-        require(mission[mission_num].coop == mission[mission_num].host);
-        require(account[msg.sender].in_mission < 10);
+        require(mission[mission_num].status == true, "mission DNE");
+        require(mission[mission_num].coop == mission[mission_num].host, "already taken");
+        require(account[msg.sender].in_mission < 10, "has too much missions");
         
         mission[mission_num].coop = msg.sender;
-      ///  emit
+        account[msg.sender].in_mission ++;
     }
+    
     function Getinfo(uint mission_num)public view returns(uint coin, bool status, uint descript, address whose, address towho){
         if(mission_num > num_of_missions){
             status = false;
