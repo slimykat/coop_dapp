@@ -86,7 +86,7 @@ contract coop_find {
     function Getinfo(uint mission_num)public view returns(
         uint coin, bool stat, uint descript, address whose, uint queue_length){
         require(mission[mission_num].status == true, "mission DNE");
-           
+        
         stat = mission[mission_num].status;
         descript = mission[mission_num].description;
         whose = mission[mission_num].host;
@@ -111,7 +111,7 @@ contract coop_find {
         }
         emit coop_paid(towho, accept_or_not);
     }
-    
+
     function mission_abort(uint mission_num)public{
         require(mission[mission_num].status == true, "mission DNE");
         require(mission[mission_num].host == msg.sender, "account does not possess the mission");
